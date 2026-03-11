@@ -1,12 +1,10 @@
- 
-## DNS Data Exfiltration Detection (Static & Dynamic Models)
+# DNS Data Exfiltration Detection
 
+**Static and streaming binary classification for DNS-based attack detection.**
 
-This repository contains the implementation and evaluation for **DNS data exfiltration detection** using:
-- **Part I:** Static binary classification (Benign vs Attack) on batch DNS data  
-- **Part II:** Dynamic/online learning with Kafka streaming and window-based retraining  
-
-Evaluation matrices and detailed results are included in the Jupyter notebooks and in any accompanying report document.
+This project implements **DNS data exfiltration detection** with two components:
+- **Static model** — Batch binary classification (Benign vs Attack) on DNS features using Random Forest and Gradient Boosting.
+- **Dynamic model** — Online learning over Kafka streams with window-based evaluation and conditional retraining when performance drops.
 
 ---
 
@@ -14,54 +12,94 @@ Evaluation matrices and detailed results are included in the Jupyter notebooks a
 
 | Component | Description |
 |-----------|-------------|
-| **Static model** | Train Random Forest and Gradient Boosting on `Static_dataset.csv`; evaluate with F1, ROC-AUC, PR-AUC, and confusion matrices. |
+| **Static model** | Train Random Forest and Gradient Boosting on batch DNS data; evaluate with F1, ROC-AUC, PR-AUC, and confusion matrices. |
 | **Dynamic model** | Consume DNS records from Kafka in windows; compare a fixed static model vs a model that retrains when F1 drops (e.g. > 2%). |
-| **Data pipeline** | Producer notebook pushes `Kafka_dataset.csv` into Kafka; consumer (or dynamic model notebook) reads from the topic. |
-| **Infrastructure** | Docker Compose runs Zookeeper and Apache Kafka for streaming. |
+| **Data pipeline** | Producer notebook pushes CSV data into Kafka; consumer or dynamic notebook reads from the topic. |
+| **Infrastructure** | Docker Compose for Zookeeper and Apache Kafka. |
+
+---
+
+## Results Achieved
+
+### Static Model (batch evaluation)
+
+Metrics target an imbalanced binary task (Benign vs Attack):
+
+- **Primary:** F1-Score (macro)
+- **Secondary:** ROC-AUC, PR-AUC (Average Precision)
+- **Display:** Confusion matrices, ROC curves, Precision–Recall curves
+
+| Model | F1 (macro) | ROC-AUC | PR-AUC | Accuracy (test) |
+|-------|------------|---------|--------|------------------|
+| **Random Forest** | **0.863** | 0.805 | 0.758 | ~0.83 |
+| **Gradient Boosting** | **0.862** | 0.802 | 0.753 | ~0.82 |
+
+- **Best CV F1-Score (grid search):** 0.8632  
+- **Train/test split:** 80% / 20% (~53K test samples)  
+- Raw accuracy is not used as the sole metric (a naive all-attack predictor would still show ~55% accuracy).
+
+### Dynamic Model (streaming)
+
+- **Window size:** 1,000 observations per window  
+- **Retrain rule:** Trigger when F1 drops more than 2% below baseline  
+- **Outcome:** Static and dynamic models stay in sync when distribution is stable; dynamic model can be retrained when drift is detected.  
+- Per-window F1 typically in the **0.84–0.87** range across runs (see notebook outputs).
+
+---
+
+## Generated Figures
+
+All figures are produced by the notebooks and saved in `setup_docs/`.
+
+### Static model (Part I)
+
+| Figure | File | Description |
+|--------|------|-------------|
+| 1 | `fig_01_class_distribution.png` | Class distribution (Benign vs Attack) |
+| 2 | `fig_02_feature_distributions.png` | Feature histograms |
+| 3 | `fig_03_boxplots_by_class.png` | Feature boxplots by class |
+| 4 | `fig_04_correlation_heatmap.png` | Feature correlation heatmap |
+| 5 | `fig_05_mutual_information.png` | Mutual information with target |
+| 6 | `fig_06_anova_ftest.png` | ANOVA F-test feature scores |
+| 7 | `fig_07_rf_importance.png` | Random Forest feature importance |
+| 8 | `fig_08_confusion_matrices.png` | Confusion matrices (RF and GB) |
+| 9 | `fig_09_roc_curves.png` | ROC curves and AUC |
+| 10 | `fig_10_pr_curves.png` | Precision–Recall curves |
+| 11 | `fig_11_model_comparison.png` | F1 / ROC-AUC / PR-AUC bar comparison |
+
+### Dynamic model (Part II)
+
+| Figure | File | Description |
+|--------|------|-------------|
+| 12 | `fig_12_time_performance.png` | F1 over time/windows (static vs dynamic) |
+| 13 | `fig_13_performance_gap.png` | Performance gap between static and dynamic |
+| 14 | `fig_14_retrain_decisions.png` | When retraining was triggered |
+| 15 | `fig_15_final_confusion.png` | Final confusion matrix (streaming evaluation) |
 
 ---
 
 ## Repository Structure
 
 ```
-Assignment_2/
+dns-exfiltration/
 ├── README.md
-├── AshpreetKaur_300411645_Assignment2_Report copy.docx   # Report with evaluation matrices & results
+├── AshpreetKaur_300411645_Assignment2_Report copy.docx   # Full report (evaluation matrices & analysis)
 ├── setup_docs/
-│   ├── Static_model copy.ipynb    # Part I: static classification & evaluation
+│   ├── Static_model copy.ipynb      # Part I: static classification & evaluation
 │   ├── Dynamic_model copy.ipynb    # Part II: online learning with Kafka
 │   ├── dns_kafka_producer.ipynb    # Push CSV data to Kafka topic
-│   ├── dns_kafka_consumer.ipynb    # Consume from Kafka (simple consumer)
+│   ├── dns_kafka_consumer.ipynb    # Simple Kafka consumer
 │   ├── docker-compose.yml          # Zookeeper + Kafka
 │   ├── docker_script.sh            # Start Docker and create topics (Unix)
 │   ├── docker_script.bat           # Start Docker and create topics (Windows)
 │   ├── requirements.txt           # Python dependencies
-│   ├── Static_dataset.csv          # Batch dataset for Part I (if included)
-│   └── Kafka_dataset.csv           # Streaming dataset for Part II (if included)
+│   ├── Static_dataset.csv          # Batch dataset for static model
+│   ├── Kafka_dataset.csv          # Streaming dataset for producer
+│   ├── fig_01_class_distribution.png … fig_15_final_confusion.png   # Generated figures
+│   ├── best_static_model.pkl       # Trained static model (from Part I)
+│   ├── scaler.pkl                  # Fitted scaler
+│   └── selected_features.pkl      # Selected feature list
 ```
-
----
-
-## Evaluation Metrics & Results (Part I – Static Model)
-
-Metrics are chosen for an imbalanced binary task (Benign vs Attack):
-
-- **Primary:** F1-Score (macro) – balances precision and recall  
-- **Secondary:** ROC-AUC, PR-AUC (Average Precision)  
-- **Display:** Confusion matrix, ROC curves, Precision–Recall curves  
-
-### Summary (from notebook runs)
-
-| Model              | F1 (macro) | ROC-AUC | PR-AUC | Accuracy (test) |
-|--------------------|------------|---------|--------|------------------|
-| Random Forest      | **0.863**  | 0.805   | 0.758  | ~0.83            |
-| Gradient Boosting  | **0.862**  | 0.802   | 0.753  | ~0.82            |
-
-- **Best CV F1-Score:** 0.8632 (from grid search).  
-- Train/test split: 80% / 20% (~53K test samples).  
-- Full classification reports, confusion matrices, ROC and PR curves are in **`setup_docs/Static_model copy.ipynb`**.  
-
-The accompanying **report** (if provided separately) contains the same evaluation matrices and a written analysis of these results.
 
 ---
 
@@ -74,21 +112,14 @@ cd setup_docs
 pip install -r requirements.txt
 ```
 
-Main dependencies: `pandas`, `kafka-python`, `kafka`, `tqdm`, plus standard ML stack used in the notebooks (`scikit-learn`, `matplotlib`, `seaborn`, `joblib`, etc. – install as needed).
+Dependencies include `pandas`, `kafka-python`, `kafka`, `tqdm`, and the usual ML stack (`scikit-learn`, `matplotlib`, `seaborn`, `joblib` — install as needed).
 
 ### 2. Kafka (Docker)
 
 From `setup_docs/`:
 
-**Linux/macOS:**
-```bash
-./docker_script.sh
-```
-
-**Windows:**
-```cmd
-docker_script.bat
-```
+**Linux/macOS:** `./docker_script.sh`  
+**Windows:** `docker_script.bat`
 
 This starts Zookeeper and Kafka and creates topics `ml-raw-dns` and `ml-dns-predictions`.
 
@@ -96,47 +127,29 @@ This starts Zookeeper and Kafka and creates topics `ml-raw-dns` and `ml-dns-pred
 
 1. Start Kafka (Docker scripts above).  
 2. **Part I:** Run `Static_model copy.ipynb` to train and evaluate; it saves `best_static_model.pkl`, `scaler.pkl`, `selected_features.pkl`.  
-3. **Part II:** Run `Dynamic_model copy.ipynb` (loads the static artefacts and consumes from Kafka).  
-4. To feed data: run `dns_kafka_producer.ipynb` to push `Kafka_dataset.csv` into the Kafka topic; the dynamic notebook or `dns_kafka_consumer.ipynb` can then consume it.
+3. **Part II:** Run `Dynamic_model copy.ipynb` (loads those artefacts and consumes from Kafka).  
+4. To feed stream data: run `dns_kafka_producer.ipynb` to push `Kafka_dataset.csv` into the topic; the dynamic notebook or `dns_kafka_consumer.ipynb` can then consume it.
 
 ---
 
 ## Datasets
 
-- **Static_dataset.csv** – Used for Part I (batch training/evaluation).  
-- **Kafka_dataset.csv** – Used for Part II (streaming via producer notebook).  
+- **Static_dataset.csv** — Batch DNS data for Part I (training and test).  
+- **Kafka_dataset.csv** — Data replayed into Kafka for Part II streaming.  
 
-Place these in `setup_docs/` if they are not already there. Dataset descriptions and feature lists are in the notebooks and in the report.
+Feature descriptions and target encoding are in the notebooks and in the report.
 
 ---
 
 ## Report
 
-The **evaluation matrices and results** are:
+Detailed evaluation matrices and analysis:
 
-- In the notebook outputs: **`setup_docs/Static_model copy.ipynb`** (and **`Dynamic_model copy.ipynb`** for Part II).  
-- In the written report: **`AshpreetKaur_300411645_Assignment2_Report copy.docx`** – full analysis and evaluation matrices.
-
----
-
-## Push to GitHub
-
-From the project root (`Assignment_2/`):
-
-1. Create a **new repository** on [GitHub](https://github.com/new) (e.g. `dns-exfiltration-assignment2`). Do **not** initialize with a README (this repo already has one).
-
-2. Add the remote and push:
-
-   ```bash
-   git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
-   git branch -M main
-   git push -u origin main
-   ```
-
-   Replace `YOUR_USERNAME` and `YOUR_REPO_NAME` with your GitHub username and repository name.
+- **Notebooks:** `setup_docs/Static_model copy.ipynb` (Part I) and `setup_docs/Dynamic_model copy.ipynb` (Part II).  
+- **Written report:** `AshpreetKaur_300411645_Assignment2_Report copy.docx`.
 
 ---
 
-## License & Citation
+## License
 
-Course assignment – University of Ottawa. Use according to your course and institutional policies.
+Use according to your institutional and course policies.
