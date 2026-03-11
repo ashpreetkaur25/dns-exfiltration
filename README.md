@@ -1,7 +1,6 @@
-# CSI5388 / ELG5271 – Assignment 2  
+ 
 ## DNS Data Exfiltration Detection (Static & Dynamic Models)
 
-**University of Ottawa | Winter 2025/2026**
 
 This repository contains the implementation and evaluation for **DNS data exfiltration detection** using:
 - **Part I:** Static binary classification (Benign vs Attack) on batch DNS data  
