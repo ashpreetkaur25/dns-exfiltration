@@ -29,14 +29,38 @@ Metrics target an imbalanced binary task (Benign vs Attack):
 - **Secondary:** ROC-AUC, PR-AUC (Average Precision)
 - **Display:** Confusion matrices, ROC curves, Precision–Recall curves
 
+**Summary table**
+
 | Model | F1 (macro) | ROC-AUC | PR-AUC | Accuracy (test) |
 |-------|------------|---------|--------|------------------|
-| **Random Forest** | **0.863** | 0.805 | 0.758 | ~0.83 |
-| **Gradient Boosting** | **0.862** | 0.802 | 0.753 | ~0.82 |
+| **Random Forest** | **0.863** | 0.805 | 0.758 | 0.83 |
+| **Gradient Boosting** | **0.862** | 0.802 | 0.753 | 0.82 |
 
 - **Best CV F1-Score (grid search):** 0.8632  
 - **Train/test split:** 80% / 20% (~53K test samples)  
 - Raw accuracy is not used as the sole metric (a naive all-attack predictor would still show ~55% accuracy).
+
+**Classification report (test set)**
+
+*Random Forest*
+
+|              | precision | recall | f1-score | support |
+|--------------|-----------|--------|----------|---------|
+| Benign       | 1.00      | 0.61   | 0.76     | 24,179  |
+| Attack       | 0.76      | 1.00   | 0.86     | 29,436  |
+| **accuracy** |           |        | **0.83** | 53,615  |
+| macro avg    | 0.88      | 0.81   | 0.81     | 53,615  |
+| weighted avg | 0.87      | 0.83   | 0.82     | 53,615  |
+
+*Gradient Boosting*
+
+|              | precision | recall | f1-score | support |
+|--------------|-----------|--------|----------|---------|
+| Benign       | 1.00      | 0.61   | 0.76     | 24,179  |
+| Attack       | 0.76      | 1.00   | 0.86     | 29,436  |
+| **accuracy** |           |        | **0.82** | 53,615  |
+| macro avg    | 0.88      | 0.81   | 0.81     | 53,615  |
+| weighted avg | 0.87      | 0.82   | 0.82     | 53,615  |
 
 ### Dynamic Model (streaming)
 
@@ -47,9 +71,9 @@ Metrics target an imbalanced binary task (Benign vs Attack):
 
 ---
 
-## Generated Figures
+## Generated Figures & Diagrams
 
-All figures are produced by the notebooks and saved in `setup_docs/`.
+Figures are produced by the notebooks and saved in `setup_docs/`. Key visuals are shown below.
 
 ### Static model (Part I)
 
@@ -67,6 +91,50 @@ All figures are produced by the notebooks and saved in `setup_docs/`.
 | 10 | `fig_10_pr_curves.png` | Precision–Recall curves |
 | 11 | `fig_11_model_comparison.png` | F1 / ROC-AUC / PR-AUC bar comparison |
 
+**Class distribution (Benign vs Attack)**
+
+![Class distribution](setup_docs/fig_01_class_distribution.png)
+
+**Feature distributions**
+
+![Feature distributions](setup_docs/fig_02_feature_distributions.png)
+
+**Feature boxplots by class**
+
+![Boxplots by class](setup_docs/fig_03_boxplots_by_class.png)
+
+**Feature correlation heatmap**
+
+![Correlation heatmap](setup_docs/fig_04_correlation_heatmap.png)
+
+**Mutual information with target**
+
+![Mutual information](setup_docs/fig_05_mutual_information.png)
+
+**ANOVA F-test feature scores**
+
+![ANOVA F-test](setup_docs/fig_06_anova_ftest.png)
+
+**Random Forest feature importance**
+
+![RF feature importance](setup_docs/fig_07_rf_importance.png)
+
+**Confusion matrices (Random Forest & Gradient Boosting)**
+
+![Confusion matrices](setup_docs/fig_08_confusion_matrices.png)
+
+**ROC curves and AUC**
+
+![ROC curves](setup_docs/fig_09_roc_curves.png)
+
+**Precision–Recall curves**
+
+![Precision-Recall curves](setup_docs/fig_10_pr_curves.png)
+
+**Model comparison (F1, ROC-AUC, PR-AUC)**
+
+![Model comparison](setup_docs/fig_11_model_comparison.png)
+
 ### Dynamic model (Part II)
 
 | Figure | File | Description |
@@ -75,6 +143,22 @@ All figures are produced by the notebooks and saved in `setup_docs/`.
 | 13 | `fig_13_performance_gap.png` | Performance gap between static and dynamic |
 | 14 | `fig_14_retrain_decisions.png` | When retraining was triggered |
 | 15 | `fig_15_final_confusion.png` | Final confusion matrix (streaming evaluation) |
+
+**F1 over time / windows (static vs dynamic)**
+
+![Time performance](setup_docs/fig_12_time_performance.png)
+
+**Performance gap (static vs dynamic)**
+
+![Performance gap](setup_docs/fig_13_performance_gap.png)
+
+**Retrain decisions**
+
+![Retrain decisions](setup_docs/fig_14_retrain_decisions.png)
+
+**Final confusion matrix (streaming evaluation)**
+
+![Final confusion matrix](setup_docs/fig_15_final_confusion.png)
 
 ---
 
